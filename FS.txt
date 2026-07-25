@@ -1,0 +1,61 @@
+app/
+│
+├── api/
+│   ├── auth.py
+│   ├── users.py
+│   └── dependencies.py
+│
+├── core/
+│   ├── config.py
+│   ├── security.py
+│   ├── exceptions.py
+│   └── logging.py
+│
+├── db/
+│   ├── base.py
+│   ├── database.py
+│   └── base_metadata.py
+│
+├── models/
+│   ├── user.py
+│   ├── role.py
+│   └── refresh_token.py
+│
+├── repositories/
+│   ├── user/
+│   │   ├── interface.py
+│   │   ├── postgres.py
+│   │   ├── fake.py
+│   │   └── __init__.py
+│   │
+│   ├── role/
+│   │   ├── interface.py
+│   │   ├── postgres.py
+│   │   └── __init__.py
+│   │
+│   └── refresh_token/
+│       ├── interface.py
+│       ├── postgres.py
+│       └── __init__.py
+│
+├── services/
+│   ├── auth/
+│   │   ├── service.py
+│   │   └── __init__.py
+│   │
+│   ├── user/
+│   │   ├── service.py
+│   │   └── __init__.py
+│   │
+│   └── email/
+│       ├── service.py
+│       └── __init__.py
+│
+├── schemas/
+│   ├── auth.py
+│   ├── user.py
+│   └── token.py
+│
+├── utils/
+│
+└── main.py
