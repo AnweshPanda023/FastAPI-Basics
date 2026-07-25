@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta, timezone
-
+import hashlib
+import hmac
+import secrets
 import jwt
 from pwdlib import PasswordHash
 from app.core.config import settings
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import HTTPException, status
+
 
 password_hasher = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(
@@ -56,3 +59,21 @@ def decode_access_token(token: str) -> dict:
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+def generate_refresh_token() -> str:
+    """
+    Generates a cryptographically secure random refresh token.
+    """
+
+    return secrets.token_urlsafe(64)
+
+def hash_refresh_token(token: str) -> str:
+    """
+    Creates an HMAC-SHA256 digest of the refresh token.
+    """
+
+    return hmac.new(
+        settings.secret_key.encode(),
+        token.encode(),
+        hashlib.sha256,
+    ).hexdigest()

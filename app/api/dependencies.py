@@ -4,9 +4,11 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_access_token, oauth2_scheme
 from app.db.database import get_db
 from app.models.user import User
+from app.repositories.refresh_token.postgres import PostgresRefreshTokenRepository
 from app.repositories.user.interface import IUserRepository
 from app.repositories.user.postgres import PostgresUserRepository
 from app.services.auth_service import AuthService
+from app.repositories.refresh_token.interface import IRefreshTokenRepository
 
 
 def get_user_repository(
@@ -15,10 +17,24 @@ def get_user_repository(
     return PostgresUserRepository(db)
 
 
+def get_refresh_token_repository(
+    db: Session = Depends(get_db),
+) -> IRefreshTokenRepository:
+
+    return PostgresRefreshTokenRepository(db)
+
+
 def get_auth_service(
-    repository: IUserRepository = Depends(get_user_repository),
+    user_repository: IUserRepository = Depends(get_user_repository),
+    refresh_token_repository: IRefreshTokenRepository = Depends(
+        get_refresh_token_repository
+    ),
 ) -> AuthService:
-    return AuthService(repository)
+
+    return AuthService(
+        user_repository=user_repository,
+        refresh_token_repository=refresh_token_repository,
+    )
 
 
 def get_current_user(

@@ -8,6 +8,7 @@ from app.api.dependencies import (
 from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
+    RefreshTokenRequest,
     RegisterRequest,
     TokenResponse,
     UserResponse,
@@ -35,9 +36,9 @@ def register(
             password=request.password,
             full_name=request.full_name,
         )
-    
+
         return user
-    
+
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -75,6 +76,7 @@ def get_me(
 ):
     return current_user
 
+
 @router.post(
     "/token",
     response_model=TokenResponse,
@@ -95,6 +97,24 @@ def token(
             email=form_data.username,
             password=form_data.password,
         )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+)
+def refresh(
+    request: RefreshTokenRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    try:
+        return auth_service.refresh(request.refresh_token)
 
     except ValueError as e:
         raise HTTPException(
