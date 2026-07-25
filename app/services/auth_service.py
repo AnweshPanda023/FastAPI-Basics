@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy.exc import IntegrityError
+from app.db.unit_of_work import UnitOfWork
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.core.security import generate_refresh_token, hash_password, hash_refresh_token
@@ -13,17 +15,22 @@ from app.core.config import settings
 
 
 class AuthService:
+
     def __init__(
         self,
         user_repository: IUserRepository,
         refresh_token_repository: IRefreshTokenRepository,
+        unit_of_work: UnitOfWork,
     ):
         self.user_repository = user_repository
         self.refresh_token_repository = refresh_token_repository
+        self.unit_of_work = unit_of_work
 
     def register(self, email: str, password: str, full_name: str) -> User:
 
-        existing_user = self.repository.get_by_email(email)
+        email = email.strip().lower()
+
+        existing_user = self.user_repository.get_by_email(email)
 
         if existing_user:
             raise ValueError("Email already registered")
@@ -36,13 +43,27 @@ class AuthService:
             full_name=full_name,
         )
 
-        return self.user_repository.create(user)
+        try:
+            with self.unit_of_work:
+                self.user_repository.create(user)
+        except IntegrityError:
+            # Handles race condition where two requests register
+            # the same email at nearly the same time.
+            raise ValueError("Email already registered")
+
+        # Session stays open after __exit__ (no db.close() there),
+        # so refresh() here safely picks up DB-generated fields (id, created_at, etc.)
+        self.unit_of_work.refresh(user)
+
+        return user
 
     def login(
         self,
         email: str,
         password: str,
     ):
+
+        email = email.strip().lower()
 
         user = self.user_repository.get_by_email(email)
 
@@ -64,7 +85,6 @@ class AuthService:
         )
 
         refresh_token = generate_refresh_token()
-
         refresh_token_hash = hash_refresh_token(refresh_token)
 
         refresh_token_entity = RefreshToken(
@@ -74,7 +94,9 @@ class AuthService:
             + timedelta(days=settings.refresh_token_expire_days),
         )
 
-        self.refresh_token_repository.create(refresh_token_entity)
+        with self.unit_of_work:
+            self.refresh_token_repository.create(refresh_token_entity)
+
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -96,22 +118,10 @@ class AuthService:
         if token.expires_at < datetime.now(timezone.utc):
             raise ValueError("Refresh token expired")
 
-        self.refresh_token_repository.revoke(token)
-
-        new_refresh_token = generate_refresh_token()
-
-        new_hash = hash_refresh_token(new_refresh_token)
-
-        new_refresh_token_entity = RefreshToken(
-            user_id=token.user_id,
-            token_hash=new_hash,
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(days=settings.refresh_token_expire_days),
-        )
-
-        self.refresh_token_repository.create(new_refresh_token_entity)
-
         user = self.user_repository.get_by_id(token.user_id)
+
+        if user is None:
+            raise ValueError("User not found")
 
         access_token = create_access_token(
             {
@@ -120,6 +130,21 @@ class AuthService:
                 "role": user.role,
             }
         )
+
+        new_refresh_token = generate_refresh_token()
+
+        new_hash = hash_refresh_token(new_refresh_token)
+
+        new_entity = RefreshToken(
+            user_id=user.id,
+            token_hash=new_hash,
+            expires_at=datetime.now(timezone.utc)
+            + timedelta(days=settings.refresh_token_expire_days),
+        )
+
+        with self.unit_of_work:
+            self.refresh_token_repository.revoke(token)
+            self.refresh_token_repository.create(new_entity)
 
         return {
             "access_token": access_token,

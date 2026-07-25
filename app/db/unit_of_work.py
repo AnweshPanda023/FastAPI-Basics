@@ -6,11 +6,15 @@ class UnitOfWork:
     def __init__(self, db: Session):
         self.db = db
 
-    def commit(self):
-        self.db.commit()
+    def __enter__(self):
+        return self
 
-    def rollback(self):
-        self.db.rollback()
+    def __exit__(self, exc_type, exc_value, traceback):
+
+        if exc_type is None:
+            self.db.commit()
+        else:
+            self.db.rollback()
 
     def refresh(self, entity):
         self.db.refresh(entity)
