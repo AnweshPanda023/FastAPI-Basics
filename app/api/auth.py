@@ -30,20 +30,13 @@ def register(
     request: RegisterRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    try:
-        user = auth_service.register(
-            email=request.email,
-            password=request.password,
-            full_name=request.full_name,
-        )
+    user = auth_service.register(
+        email=request.email,
+        password=request.password,
+        full_name=request.full_name,
+    )
 
-        return user
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e),
-        )
+    return user
 
 
 @router.post(
@@ -54,17 +47,10 @@ def login(
     request: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    try:
-        return auth_service.login(
-            email=request.email,
-            password=request.password,
-        )
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=401,
-            detail=str(e),
-        )
+    return auth_service.login(
+        email=request.email,
+        password=request.password,
+    )
 
 
 @router.get(
@@ -92,17 +78,10 @@ def token(
     you're actually logging in with an email address.
     """
 
-    try:
-        return auth_service.login(
-            email=form_data.username,
-            password=form_data.password,
-        )
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
+    return auth_service.login(
+        email=form_data.username,
+        password=form_data.password,
+    )
 
 
 @router.post(
@@ -113,11 +92,5 @@ def refresh(
     request: RefreshTokenRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    try:
-        return auth_service.refresh(request.refresh_token)
 
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
+    return auth_service.refresh(request.refresh_token)

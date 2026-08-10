@@ -2,6 +2,13 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.exc import IntegrityError
 from app.db.unit_of_work import UnitOfWork
+from app.exceptions.auth import (
+    InvalidCredentialsException,
+    UserNotFoundException,
+    InvalidRefreshTokenException,
+    RefreshTokenExpiredException,
+    EmailAlreadyExistsException,
+)
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.core.security import generate_refresh_token, hash_password, hash_refresh_token
@@ -26,6 +33,8 @@ class AuthService:
         self.refresh_token_repository = refresh_token_repository
         self.unit_of_work = unit_of_work
 
+    
+    #register a new user
     def register(self, email: str, password: str, full_name: str) -> User:
 
         email = email.strip().lower()
@@ -33,7 +42,7 @@ class AuthService:
         existing_user = self.user_repository.get_by_email(email)
 
         if existing_user:
-            raise ValueError("Email already registered")
+            raise EmailAlreadyExistsException()
 
         hashed_password = hash_password(password)
 
@@ -49,7 +58,7 @@ class AuthService:
         except IntegrityError:
             # Handles race condition where two requests register
             # the same email at nearly the same time.
-            raise ValueError("Email already registered")
+            raise EmailAlreadyExistsException()
 
         # Session stays open after __exit__ (no db.close() there),
         # so refresh() here safely picks up DB-generated fields (id, created_at, etc.)
@@ -68,14 +77,13 @@ class AuthService:
         user = self.user_repository.get_by_email(email)
 
         if user is None:
-            raise ValueError("Invalid email or password")
+            raise InvalidCredentialsException()
 
         if not verify_password(
             password,
             user.password_hash,
         ):
-            raise ValueError("Invalid email or password")
-
+            raise InvalidCredentialsException()
         access_token = create_access_token(
             {
                 "sub": str(user.id),
@@ -113,15 +121,15 @@ class AuthService:
         token = self.refresh_token_repository.get_by_hash(token_hash)
 
         if token is None:
-            raise ValueError("Invalid refresh token")
+            raise InvalidRefreshTokenException()
 
         if token.expires_at < datetime.now(timezone.utc):
-            raise ValueError("Refresh token expired")
+            raise RefreshTokenExpiredException()
 
         user = self.user_repository.get_by_id(token.user_id)
 
         if user is None:
-            raise ValueError("User not found")
+            raise UserNotFoundException()
 
         access_token = create_access_token(
             {

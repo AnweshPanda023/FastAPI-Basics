@@ -2,8 +2,12 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 
-app = FastAPI(title=settings.app_name)
 from app.api.auth import router as auth_router
+from app.exceptions.handlers import (
+    register_exception_handlers,
+)
+
+app = FastAPI(title=settings.app_name)
 
 
 @app.get("/")
@@ -13,4 +17,6 @@ def home():
         "debug": settings.debug,
     }
 
+
+register_exception_handlers(app)
 app.include_router(auth_router)
