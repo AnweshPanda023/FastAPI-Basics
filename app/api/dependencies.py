@@ -10,6 +10,7 @@ from app.repositories.user.interface import IUserRepository
 from app.repositories.user.postgres import PostgresUserRepository
 from app.services.auth_service import AuthService
 from app.repositories.refresh_token.interface import IRefreshTokenRepository
+from app.services.user_service import UserService
 
 
 def get_user_repository(
@@ -66,3 +67,14 @@ def get_current_user(
         )
 
     return user
+
+
+def get_user_service(
+    repository: IUserRepository = Depends(get_user_repository),
+    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+) -> UserService:
+
+    return UserService(
+        user_repository=repository,
+        unit_of_work=unit_of_work,
+    )

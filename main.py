@@ -6,6 +6,7 @@ from app.api.auth import router as auth_router
 from app.exceptions.handlers import (
     register_exception_handlers,
 )
+from app.api.users import router as users_router
 
 app = FastAPI(title=settings.app_name)
 
@@ -20,3 +21,4 @@ def home():
 
 register_exception_handlers(app)
 app.include_router(auth_router)
+app.include_router(users_router)

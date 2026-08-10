@@ -15,10 +15,35 @@ from app.schemas.auth import (
 )
 from app.services.auth_service import AuthService
 
+from app.api.authorization import require_role
+from app.models.enums import UserRole
+
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
 )
+
+
+@router.get(
+    "/admin",
+)
+def admin_endpoint(
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    return {
+        "message": "Welcome, admin!",
+        "user_id": current_user.id,
+    }
+
+
+@router.get("/moderator")
+def moderator_endpoint(
+    current_user: User = Depends(require_role(UserRole.MODERATOR)),
+):
+    return {
+        "message": "Welcome, moderator!",
+        "user_id": current_user.id,
+    }
 
 
 @router.post(

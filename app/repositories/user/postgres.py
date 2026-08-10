@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.models.enums import UserRole
 from app.models.user import User
 from app.repositories.user.interface import IUserRepository
 
@@ -10,19 +11,16 @@ class PostgresUserRepository(IUserRepository):
         self.db = db
 
     def get_by_email(self, email: str) -> User | None:
-        return (
-            self.db.query(User)
-            .filter(User.email == email)
-            .first()
-        )
+        return self.db.query(User).filter(User.email == email).first()
 
     def get_by_id(self, user_id: int) -> User | None:
-        return (
-            self.db.query(User)
-            .filter(User.id == user_id)
-            .first()
-        )
+        return self.db.query(User).filter(User.id == user_id).first()
 
     def create(self, user: User) -> User:
         self.db.add(user)
+        return user
+
+    def update_role(self, user: User, role: UserRole) -> User:
+        user.role = role
+        self.db.flush()
         return user

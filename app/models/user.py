@@ -2,8 +2,9 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Enum as SQLEnum
 from app.db.base import Base
+from app.models.enums import UserRole
 
 
 class User(Base):
@@ -37,9 +38,14 @@ class User(Base):
         default=True,
     )
 
-    role: Mapped[str] = mapped_column(
-        String(50),
-        default="user",
+    role: Mapped[UserRole] = mapped_column(
+        SQLEnum(
+            UserRole,
+            values_callable=lambda enum: [item.value for item in enum],
+            name="userrole",
+        ),
+        default=UserRole.USER,
+        nullable=False,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -54,7 +60,7 @@ class User(Base):
     )
 
     refresh_tokens = relationship(
-    "RefreshToken",
-    back_populates="user",
-    cascade="all, delete-orphan",
+        "RefreshToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )

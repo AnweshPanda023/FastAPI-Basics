@@ -33,8 +33,7 @@ class AuthService:
         self.refresh_token_repository = refresh_token_repository
         self.unit_of_work = unit_of_work
 
-    
-    #register a new user
+    # register a new user
     def register(self, email: str, password: str, full_name: str) -> User:
 
         email = email.strip().lower()
@@ -84,13 +83,7 @@ class AuthService:
             user.password_hash,
         ):
             raise InvalidCredentialsException()
-        access_token = create_access_token(
-            {
-                "sub": str(user.id),
-                "email": user.email,
-                "role": user.role,
-            }
-        )
+        access_token = create_access_token({"sub": str(user.id)})
 
         refresh_token = generate_refresh_token()
         refresh_token_hash = hash_refresh_token(refresh_token)
@@ -131,13 +124,7 @@ class AuthService:
         if user is None:
             raise UserNotFoundException()
 
-        access_token = create_access_token(
-            {
-                "sub": str(user.id),
-                "email": user.email,
-                "role": user.role,
-            }
-        )
+        access_token = create_access_token({"sub": str(user.id)})
 
         new_refresh_token = generate_refresh_token()
 
