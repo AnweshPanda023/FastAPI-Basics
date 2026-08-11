@@ -66,3 +66,16 @@ class UserNotFoundException(AppException):
             status_code=status.HTTP_404_NOT_FOUND,
             error_code="AUTH_USER_NOT_FOUND",
         )
+
+
+class RoleNotFoundException(AppException):
+
+    def __init__(
+        self,
+        message: str = "Role not found",
+    ):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="AUTH_ROLE_NOT_FOUND",
+        )

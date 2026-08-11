@@ -6,11 +6,10 @@ from app.api.dependencies import get_current_user
 from app.exceptions.authorization import (
     InsufficientPermissionsException,
 )
-from app.models.enums import UserRole
 from app.models.user import User
 
 
-def require_role(required_role: UserRole) -> Callable:
+def require_role(required_role: str) -> Callable:
 
     def role_checker(
         current_user: User = Depends(get_current_user),

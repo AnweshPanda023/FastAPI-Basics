@@ -1,7 +1,6 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.models.enums import UserRole
 from app.models.user import User
 from app.repositories.user.interface import IUserRepository
 
@@ -21,7 +20,7 @@ class PostgresUserRepository(IUserRepository):
         self.db.add(user)
         return user
 
-    def update_role(self, user: User, role: UserRole) -> User:
+    def update_role(self, user: User, role: str) -> User:
         user.role = role
         self.db.flush()
         return user
@@ -31,7 +30,7 @@ class PostgresUserRepository(IUserRepository):
         offset: int,
         limit: int,
         search: str | None = None,
-        role: UserRole | None = None,
+        role: str | None = None,
         is_active: bool | None = None,
     ) -> list[User]:
 
@@ -58,7 +57,7 @@ class PostgresUserRepository(IUserRepository):
     def count_all(
         self,
         search: str | None = None,
-        role: UserRole | None = None,
+        role: str | None = None,
         is_active: bool | None = None,
     ) -> int:
 
@@ -75,7 +74,7 @@ class PostgresUserRepository(IUserRepository):
             )
 
         if role is not None:
-            query = query.filter(User.role == role)
+            query = query.filter(User.role.has(name=role.name))
 
         if is_active is not None:
             query = query.filter(User.is_active == is_active)

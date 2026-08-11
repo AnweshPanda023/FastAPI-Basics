@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends
 
 from app.api.authorization import require_role
-from app.api.dependencies import get_user_service
-from app.models.enums import UserRole
+from app.api.dependencies import get_user_service, require_permission
 from app.models.user import User
 from app.schemas.auth import UserResponse
 from app.schemas.common import PaginationParams
-from app.schemas.user import PaginatedUsersResponse, UpdateUserRoleRequest, UserListParams
+from app.schemas.user import (
+    PaginatedUsersResponse,
+    UpdateUserRoleRequest,
+    UserListParams,
+)
 from app.services.user_service import UserService
 
 router = APIRouter(
@@ -25,7 +28,7 @@ router = APIRouter(
 )
 def get_all_users(
     params: UserListParams = Depends(),
-    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    current_user: User = Depends(require_permission("users:view")),
     user_service: UserService = Depends(get_user_service),
 ):
     return user_service.get_all_users(
@@ -44,7 +47,7 @@ def get_all_users(
 def update_user_role(
     user_id: int,
     request: UpdateUserRoleRequest,
-    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    current_user: User = Depends(require_permission("users:change_role")),
     user_service: UserService = Depends(get_user_service),
 ):
     return user_service.update_role(

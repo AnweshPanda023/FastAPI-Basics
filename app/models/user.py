@@ -1,10 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Enum as SQLEnum
 from app.db.base import Base
-from app.models.enums import UserRole
 
 
 class User(Base):
@@ -38,14 +36,14 @@ class User(Base):
         default=True,
     )
 
-    role: Mapped[UserRole] = mapped_column(
-        SQLEnum(
-            UserRole,
-            values_callable=lambda enum: [item.value for item in enum],
-            name="userrole",
-        ),
-        default=UserRole.USER,
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id"),
         nullable=False,
+    )
+
+    role = relationship(
+        "Role",
+        back_populates="users",
     )
 
     created_at: Mapped[datetime] = mapped_column(

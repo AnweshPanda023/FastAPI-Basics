@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 
 from app.core.config import settings
-
 from app.api.auth import router as auth_router
 from app.exceptions.handlers import (
     register_exception_handlers,

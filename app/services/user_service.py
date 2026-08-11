@@ -1,9 +1,9 @@
 import math
 
 from app.db.unit_of_work import UnitOfWork
-from app.exceptions.auth import UserNotFoundException
-from app.models.enums import UserRole
+from app.exceptions.auth import UserNotFoundException, RoleNotFoundException
 from app.models.user import User
+from app.repositories.role.interface import IRoleRepository
 from app.repositories.user.interface import IUserRepository
 
 
@@ -13,17 +13,34 @@ class UserService:
         self,
         user_repository: IUserRepository,
         unit_of_work: UnitOfWork,
+        role_repository: IRoleRepository,
     ):
         self.user_repository = user_repository
         self.unit_of_work = unit_of_work
+        self.role_repository = role_repository
 
-    def update_role(self, user_id: int, role: UserRole) -> User:
+    def update_role(
+        self,
+        user_id: int,
+        role: str,
+    ) -> User:
+
         user = self.user_repository.get_by_id(user_id)
 
         if user is None:
-            raise UserNotFoundException()
+            raise UserNotFoundException("User not found")
+
+        role = role.strip().lower()
+
+        new_role = self.role_repository.get_by_name(role)
+
+        if new_role is None:
+            raise RoleNotFoundException()
+
+        user.role = new_role
+
         with self.unit_of_work:
-            self.user_repository.update_role(user, role)
+            self.user_repository.update_role(user, user.role)
 
         return user
 
@@ -32,7 +49,7 @@ class UserService:
         page: int,
         page_size: int,
         search: str | None = None,
-        role: UserRole | None = None,
+        role: str | None = None,
         is_active: bool | None = None,
     ):
         offset = (page - 1) * page_size

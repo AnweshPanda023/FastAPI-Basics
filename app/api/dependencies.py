@@ -6,6 +6,8 @@ from app.db.database import get_db
 from app.db.unit_of_work import UnitOfWork
 from app.models.user import User
 from app.repositories.refresh_token.postgres import PostgresRefreshTokenRepository
+from app.repositories.role.interface import IRoleRepository
+from app.repositories.role.postgres import PostgresRoleRepository
 from app.repositories.user.interface import IUserRepository
 from app.repositories.user.postgres import PostgresUserRepository
 from app.services.auth_service import AuthService
@@ -69,12 +71,43 @@ def get_current_user(
     return user
 
 
+def get_role_repository(
+    db: Session = Depends(get_db),
+) -> IRoleRepository:
+    return PostgresRoleRepository(db)
+
+
 def get_user_service(
     repository: IUserRepository = Depends(get_user_repository),
+    role_repository: IRoleRepository = Depends(get_role_repository),
     unit_of_work: UnitOfWork = Depends(get_unit_of_work),
 ) -> UserService:
 
     return UserService(
         user_repository=repository,
+        role_repository=role_repository,
         unit_of_work=unit_of_work,
     )
+
+
+def require_permission(permission_name: str):
+
+    def permission_checker(
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+
+        permissions = current_user.role.permissions
+
+        has_permission = any(
+            permission.name == permission_name for permission in permissions
+        )
+
+        if not has_permission:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+
+        return current_user
+
+    return permission_checker

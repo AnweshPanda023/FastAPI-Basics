@@ -1,6 +1,4 @@
 from app.db.base import Base
+from app import models
 
-# Import every model here
-from app.models.user import User
-
-from app.models.refresh_token import RefreshToken
+target_metadata = Base.metadata
