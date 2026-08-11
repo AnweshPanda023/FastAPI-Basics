@@ -1,5 +1,7 @@
 from typing import Protocol
 
+from sqlalchemy import Sequence
+
 from app.models.enums import UserRole
 from app.models.user import User
 
@@ -17,3 +19,19 @@ class IUserRepository(Protocol):
         user: User,
         role: UserRole,
     ) -> User: ...
+
+    def get_all(
+        self,
+        offset: int,
+        limit: int,
+        search: str | None = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+    ) -> list[User]: ...
+
+    def count_all(
+        self,
+        search: str | None = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+    ) -> int: ...

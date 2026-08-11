@@ -1,3 +1,5 @@
+import math
+
 from app.db.unit_of_work import UnitOfWork
 from app.exceptions.auth import UserNotFoundException
 from app.models.enums import UserRole
@@ -24,3 +26,37 @@ class UserService:
             self.user_repository.update_role(user, role)
 
         return user
+
+    def get_all_users(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+    ):
+        offset = (page - 1) * page_size
+
+        users = self.user_repository.get_all(
+            offset=offset,
+            limit=page_size,
+            search=search,
+            role=role,
+            is_active=is_active,
+        )
+
+        total = self.user_repository.count_all(
+            search=search,
+            role=role,
+            is_active=is_active,
+        )
+
+        total_pages = math.ceil(total / page_size)
+
+        return {
+            "items": users,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": total_pages,
+        }
