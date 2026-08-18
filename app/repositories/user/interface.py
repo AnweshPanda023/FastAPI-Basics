@@ -13,11 +13,7 @@ class IUserRepository(Protocol):
 
     def get_by_id(self, id: int) -> User | None: ...
 
-    def update_role(
-        self,
-        user: User,
-        role: str,
-    ) -> User: ...
+    def update(self, user: User) -> User: ...
 
     def get_all(
         self,

@@ -1,6 +1,7 @@
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
+from app.models.role import Role
 from app.models.user import User
 from app.repositories.user.interface import IUserRepository
 
@@ -13,15 +14,28 @@ class PostgresUserRepository(IUserRepository):
     def get_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email).first()
 
-    def get_by_id(self, user_id: int) -> User | None:
-        return self.db.query(User).filter(User.id == user_id).first()
+    def get_by_id(
+        self,
+        user_id: int,
+    ) -> User | None:
 
-    def create(self, user: User) -> User:
+        return (
+            self.db.query(User)
+            .options(selectinload(User.role).selectinload(Role.permissions))
+            .filter(User.id == user_id)
+            .first()
+        )
+
+    def create(
+        self,
+        user: User,
+    ) -> User:
+
         self.db.add(user)
+
         return user
 
-    def update_role(self, user: User, role: str) -> User:
-        user.role = role
+    def update(self, user: User) -> User:
         self.db.flush()
         return user
 
@@ -47,7 +61,9 @@ class PostgresUserRepository(IUserRepository):
             )
 
         if role is not None:
-            query = query.filter(User.role == role)
+            role = role.strip().lower()
+
+            query = query.filter(User.role.has(name=role))
 
         if is_active is not None:
             query = query.filter(User.is_active == is_active)
@@ -74,7 +90,9 @@ class PostgresUserRepository(IUserRepository):
             )
 
         if role is not None:
-            query = query.filter(User.role.has(name=role.name))
+            role = role.strip().lower()
+
+            query = query.filter(User.role.has(name=role))
 
         if is_active is not None:
             query = query.filter(User.is_active == is_active)

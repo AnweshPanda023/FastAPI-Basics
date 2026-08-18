@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class RoleResponse(BaseModel):
@@ -55,3 +55,7 @@ class UserListParams(BaseModel):
     role: str | None = None
 
     is_active: bool | None = None
+
+class UpdateProfileRequest(BaseModel):
+    email: EmailStr | None = None
+    full_name: str | None = None

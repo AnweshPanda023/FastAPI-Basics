@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from app.db.unit_of_work import UnitOfWork
 from app.exceptions.auth import (
     InvalidCredentialsException,
+    RoleNotFoundException,
     UserNotFoundException,
     InvalidRefreshTokenException,
     RefreshTokenExpiredException,
@@ -17,6 +18,7 @@ from app.core.security import (
     verify_password,
 )
 from app.repositories.refresh_token.interface import IRefreshTokenRepository
+from app.repositories.role.interface import IRoleRepository
 from app.repositories.user.interface import IUserRepository
 from app.core.config import settings
 
@@ -26,15 +28,22 @@ class AuthService:
     def __init__(
         self,
         user_repository: IUserRepository,
+        role_repository: IRoleRepository,
         refresh_token_repository: IRefreshTokenRepository,
         unit_of_work: UnitOfWork,
     ):
         self.user_repository = user_repository
+        self.role_repository = role_repository
         self.refresh_token_repository = refresh_token_repository
         self.unit_of_work = unit_of_work
 
     # register a new user
-    def register(self, email: str, password: str, full_name: str) -> User:
+    def register(
+        self,
+        email: str,
+        password: str,
+        full_name: str,
+    ) -> User:
 
         email = email.strip().lower()
 
@@ -43,24 +52,27 @@ class AuthService:
         if existing_user:
             raise EmailAlreadyExistsException()
 
+        default_role = self.role_repository.get_by_name("user")
+
+        if default_role is None:
+            raise RoleNotFoundException("Default user role is not configured")
+
         hashed_password = hash_password(password)
 
         user = User(
             email=email,
             password_hash=hashed_password,
-            full_name=full_name,
+            full_name=full_name.strip(),
+            role=default_role,
         )
 
         try:
             with self.unit_of_work:
                 self.user_repository.create(user)
+
         except IntegrityError:
-            # Handles race condition where two requests register
-            # the same email at nearly the same time.
             raise EmailAlreadyExistsException()
 
-        # Session stays open after __exit__ (no db.close() there),
-        # so refresh() here safely picks up DB-generated fields (id, created_at, etc.)
         self.unit_of_work.refresh(user)
 
         return user

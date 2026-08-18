@@ -79,3 +79,23 @@ class RoleNotFoundException(AppException):
             status_code=status.HTTP_404_NOT_FOUND,
             error_code="AUTH_ROLE_NOT_FOUND",
         )
+
+
+class InvalidCurrentPasswordException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            message="Current password is incorrect",
+            status_code=400,
+            error_code="INVALID_CURRENT_PASSWORD",
+        )
+
+
+class SamePasswordException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            message="Current password is same as existing one",
+            status_code=400,
+            error_code="SAME_CURRENT_PASSWORD",
+        )
