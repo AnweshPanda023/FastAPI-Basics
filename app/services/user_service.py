@@ -5,6 +5,7 @@ from app.db.unit_of_work import UnitOfWork
 from app.exceptions.auth import (
     EmailAlreadyExistsException,
     InvalidCurrentPasswordException,
+    SamePasswordException,
     UserNotFoundException,
     RoleNotFoundException,
 )

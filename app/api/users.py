@@ -8,6 +8,7 @@ from app.api.dependencies import (
 from app.models.user import User
 from app.schemas.auth import ChangePasswordRequest
 from app.schemas.user import (
+    ChangePasswordResponse,
     UpdateProfileRequest,
     UserResponse,
 )
@@ -47,7 +48,8 @@ def update_me(
 
 @router.post(
     "/me/change-password",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=ChangePasswordResponse,
+    status_code=status.HTTP_200_OK,
 )
 def change_password(
     request: ChangePasswordRequest,
@@ -59,3 +61,5 @@ def change_password(
         current_password=request.current_password,
         new_password=request.new_password,
     )
+
+    return ChangePasswordResponse(message="Password changed successfully")

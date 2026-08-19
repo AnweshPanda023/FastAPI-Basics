@@ -99,3 +99,13 @@ class SamePasswordException(AppException):
             status_code=400,
             error_code="SAME_CURRENT_PASSWORD",
         )
+
+
+class InvalidPasswordResetTokenException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            message="Invalid or expired password reset token",
+            status_code=400,
+            error_code="INVALID_PASSWORD_RESET_TOKEN",
+        )

@@ -14,6 +14,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from app.schemas.user import ForgotPasswordRequest, PasswordResetResponse, ResetPasswordRequest
 from app.services.auth_service import AuthService
 
 from app.api.authorization import require_role
@@ -97,3 +98,41 @@ def refresh(
 ):
 
     return auth_service.refresh(request.refresh_token)
+
+
+@router.post(
+    "/forgot-password",
+    response_model=PasswordResetResponse,
+    status_code=status.HTTP_200_OK,
+)
+def forgot_password(
+    request: ForgotPasswordRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    auth_service.forgot_password(
+        email=request.email,
+    )
+
+    return PasswordResetResponse(
+        message=(
+            "If an account exists with this email, "
+            "a password reset link has been sent."
+        )
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=PasswordResetResponse,
+    status_code=status.HTTP_200_OK,
+)
+def reset_password(
+    request: ResetPasswordRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    auth_service.reset_password(
+        token=request.token,
+        new_password=request.new_password,
+    )
+
+    return PasswordResetResponse(message="Password reset successfully")

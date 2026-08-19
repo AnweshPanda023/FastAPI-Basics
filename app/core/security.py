@@ -8,11 +8,8 @@ from app.core.config import settings
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import HTTPException, status
 
-
 password_hasher = PasswordHash.recommended()
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/token"
-)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 def hash_password(password: str) -> str:
@@ -21,6 +18,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, password_hash: str) -> bool:
     return password_hasher.verify(password, password_hash)
+
 
 def create_access_token(data: dict) -> str:
     payload = data.copy()
@@ -37,13 +35,10 @@ def create_access_token(data: dict) -> str:
         algorithm=settings.algorithm,
     )
 
+
 def decode_access_token(token: str) -> dict:
     try:
-        payload = jwt.decode(
-            token,
-            settings.secret_key,
-            algorithms= settings.algorithm
-        )
+        payload = jwt.decode(token, settings.secret_key, algorithms=settings.algorithm)
         return payload
 
     except jwt.ExpiredSignatureError:
@@ -59,13 +54,15 @@ def decode_access_token(token: str) -> dict:
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+
 def generate_refresh_token() -> str:
     """
     Generates a cryptographically secure random refresh token.
     """
 
     return secrets.token_urlsafe(64)
+
 
 def hash_refresh_token(token: str) -> str:
     """
@@ -77,3 +74,11 @@ def hash_refresh_token(token: str) -> str:
         token.encode(),
         hashlib.sha256,
     ).hexdigest()
+
+
+def generate_password_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_password_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

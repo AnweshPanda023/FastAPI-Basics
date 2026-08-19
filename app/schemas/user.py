@@ -56,6 +56,24 @@ class UserListParams(BaseModel):
 
     is_active: bool | None = None
 
+
 class UpdateProfileRequest(BaseModel):
     email: EmailStr | None = None
     full_name: str | None = None
+
+
+class ChangePasswordResponse(BaseModel):
+    message: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8)
+
+
+class PasswordResetResponse(BaseModel):
+    message: str

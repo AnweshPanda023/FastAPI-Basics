@@ -5,6 +5,9 @@ from app.core.security import decode_access_token, oauth2_scheme
 from app.db.database import get_db
 from app.db.unit_of_work import UnitOfWork
 from app.models.user import User
+from app.repositories.password_reset_token.postgres import (
+    PostgresPasswordResetTokenRepository,
+)
 from app.repositories.refresh_token.postgres import PostgresRefreshTokenRepository
 from app.repositories.role.interface import IRoleRepository
 from app.repositories.role.postgres import PostgresRoleRepository
@@ -12,6 +15,7 @@ from app.repositories.user.interface import IUserRepository
 from app.repositories.user.postgres import PostgresUserRepository
 from app.services.auth_service import AuthService
 from app.repositories.refresh_token.interface import IRefreshTokenRepository
+from app.services.email_service import EmailService
 from app.services.user_service import UserService
 
 
@@ -42,19 +46,16 @@ def get_unit_of_work(
 
 
 def get_auth_service(
-    user_repository: IUserRepository = Depends(get_user_repository),
-    role_repository: IRoleRepository = Depends(get_role_repository),
-    refresh_token_repository: IRefreshTokenRepository = Depends(
-        get_refresh_token_repository
-    ),
-    unit_of_work: UnitOfWork = Depends(get_unit_of_work),
+    db: Session = Depends(get_db),
 ) -> AuthService:
 
     return AuthService(
-        user_repository=user_repository,
-        role_repository=role_repository,
-        refresh_token_repository=refresh_token_repository,
-        unit_of_work=unit_of_work,
+        user_repository=PostgresUserRepository(db),
+        role_repository=PostgresRoleRepository(db),
+        refresh_token_repository=PostgresRefreshTokenRepository(db),
+        password_reset_token_repository=(PostgresPasswordResetTokenRepository(db)),
+        email_service=EmailService(),
+        unit_of_work=UnitOfWork(db),
     )
 
 
